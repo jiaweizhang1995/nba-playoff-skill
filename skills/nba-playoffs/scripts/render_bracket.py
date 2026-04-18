@@ -13,6 +13,7 @@ Speed optimizations:
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import re
@@ -34,7 +35,7 @@ CACHE_DIR = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "nb
 CACHE_FILE = CACHE_DIR / "bracket.json"
 CACHE_TTL = 300  # seconds
 
-BOX_W = 17
+BOX_W = 20
 BLOCK_H = 5
 GAP = 2
 
@@ -364,13 +365,95 @@ def render(bracket: dict, live: dict) -> str:
     )
 
 
+FONT_CANDIDATES = [
+    "/System/Library/Fonts/Menlo.ttc",
+    "/System/Library/Fonts/SFNSMono.ttf",
+    "/Library/Fonts/SF-Mono-Regular.otf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+    "/usr/share/fonts/dejavu/DejaVuSansMono.ttf",
+    "/usr/share/fonts/TTF/DejaVuSansMono.ttf",
+    "C:/Windows/Fonts/consola.ttf",
+    "C:/Windows/Fonts/cour.ttf",
+]
+
+
+def _find_mono_font(size: int):
+    from PIL import ImageFont
+
+    for p in FONT_CANDIDATES:
+        if os.path.exists(p):
+            return ImageFont.truetype(p, size)
+    raise RuntimeError(
+        "No monospace TTF font found. Install one (e.g. DejaVu Sans Mono) or "
+        "edit FONT_CANDIDATES in render_bracket.py."
+    )
+
+
+def render_png(text: str, out_path: Path, font_size: int = 18) -> None:
+    try:
+        from PIL import Image, ImageDraw
+    except ImportError as e:
+        raise RuntimeError(
+            "PNG output requires Pillow. Install with: pip install Pillow"
+        ) from e
+
+    font = _find_mono_font(font_size)
+    lines = text.rstrip("\n").split("\n")
+
+    bbox = font.getbbox("M")
+    char_w = bbox[2] - bbox[0]
+    line_h = int((bbox[3] - bbox[1]) * 1.4) + 2
+
+    max_cols = max((len(ln) for ln in lines), default=1)
+    pad = 24
+    img_w = char_w * max_cols + pad * 2
+    img_h = line_h * len(lines) + pad * 2
+
+    bg = (22, 22, 24)
+    fg = (230, 230, 230)
+    img = Image.new("RGB", (img_w, img_h), bg)
+    draw = ImageDraw.Draw(img)
+    for i, line in enumerate(lines):
+        draw.text((pad, pad + i * line_h), line, font=font, fill=fg)
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    img.save(str(out_path), "PNG")
+
+
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Render NBA playoff bracket.")
+    parser.add_argument(
+        "--png",
+        metavar="PATH",
+        help="Render bracket as PNG to PATH instead of ASCII to stdout.",
+    )
+    parser.add_argument(
+        "--font-size",
+        type=int,
+        default=18,
+        help="PNG font size (default: 18).",
+    )
+    args = parser.parse_args()
+
     try:
         bracket, live = load_all()
     except Exception as e:
         print(f"ERROR fetching bracket: {e}", file=sys.stderr)
         return 1
-    sys.stdout.write(render(bracket, live))
+
+    text = render(bracket, live)
+
+    if args.png:
+        try:
+            out = Path(args.png).expanduser().resolve()
+            render_png(text, out, font_size=args.font_size)
+            print(str(out))
+            return 0
+        except Exception as e:
+            print(f"ERROR rendering PNG: {e}", file=sys.stderr)
+            return 2
+
+    sys.stdout.write(text)
     return 0
 
 

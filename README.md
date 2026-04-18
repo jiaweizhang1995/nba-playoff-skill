@@ -28,7 +28,19 @@ NBA PLAYOFFS 2025-26 -- 1st Round
 
 - Claude Code
 - Python 3.9+ with `requests` → `pip install requests`
+- **PNG mode only:** `Pillow` → `pip install Pillow`
 - Node.js 16+ (npm install method only)
+
+### Output modes
+
+- **ASCII** (default) — text bracket in terminal.
+- **PNG** — image file, for IM bridges (Feishu / Telegram / WeChat) or mobile.
+
+Claude auto-picks mode based on context. Force PNG manually:
+
+```bash
+python3 ~/.claude/skills/nba-playoffs/scripts/render_bracket.py --png /tmp/bracket.png
+```
 
 ### Install
 
@@ -91,7 +103,19 @@ NBA PLAYOFFS 2025-26 -- 1st Round
 
 - Claude Code
 - Python 3.9+，带 `requests` 包 → `pip install requests`
+- **仅 PNG 模式**：`Pillow` → `pip install Pillow`
 - Node.js 16+（仅 npm 安装方式需要）
+
+### 输出模式
+
+- **ASCII**（默认）— 终端文本对阵图
+- **PNG** — 图片文件，适合飞书 / Telegram / 微信等 IM 桥接场景
+
+Claude 自动根据上下文选择。手动强制 PNG：
+
+```bash
+python3 ~/.claude/skills/nba-playoffs/scripts/render_bracket.py --png /tmp/bracket.png
+```
 
 ### 安装
 

@@ -9,8 +9,8 @@
     {
       "name": "nba-playoff-skill",
       "source": "./",
-      "description": "NBA playoff bracket ASCII renderer with live scores and Beijing-time dates.",
-      "version": "1.0.0",
+      "description": "NBA playoff bracket renderer (ASCII or PNG) with live scores and Beijing-time dates.",
+      "version": "1.1.0",
       "category": "sports",
       "tags": ["nba", "playoffs", "bracket", "espn"]
     }
