@@ -1,0 +1,18 @@
+{
+  "name": "jimmyzhang-skills",
+  "owner": {
+    "name": "jimmyzhang95",
+    "email": "jiawei.zhang95@outlook.com",
+    "url": "https://github.com/jiaweizhang1995"
+  },
+  "plugins": [
+    {
+      "name": "nba-playoff-skill",
+      "source": "./",
+      "description": "NBA playoff bracket ASCII renderer with live scores and Beijing-time dates.",
+      "version": "1.0.0",
+      "category": "sports",
+      "tags": ["nba", "playoffs", "bracket", "espn"]
+    }
+  ]
+}

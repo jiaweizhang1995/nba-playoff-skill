@@ -1,0 +1,43 @@
+{
+  "name": "nba-playoff-skill",
+  "version": "1.0.0",
+  "description": "Claude Code skill that renders the current NBA playoff bracket as an ASCII tree with live scores and Beijing-time dates.",
+  "keywords": [
+    "claude-code",
+    "claude-skill",
+    "nba",
+    "playoffs",
+    "bracket",
+    "espn"
+  ],
+  "author": "jimmyzhang95 <jiawei.zhang95@outlook.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/jiaweizhang1995/nba-playoff-skill#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jiaweizhang1995/nba-playoff-skill.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jiaweizhang1995/nba-playoff-skill/issues"
+  },
+  "scripts": {
+    "postinstall": "node install.js",
+    "preuninstall": "node uninstall.js"
+  },
+  "files": [
+    "install.js",
+    "uninstall.js",
+    "skills/",
+    ".claude-plugin/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ]
+}

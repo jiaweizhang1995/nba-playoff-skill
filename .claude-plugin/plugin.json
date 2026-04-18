@@ -1,0 +1,14 @@
+{
+  "name": "nba-playoff-skill",
+  "version": "1.0.0",
+  "description": "NBA playoff bracket ASCII renderer with live scores, Beijing-time dates. Scrapes ESPN.",
+  "author": {
+    "name": "jimmyzhang95",
+    "email": "jiawei.zhang95@outlook.com",
+    "url": "https://github.com/jiaweizhang1995"
+  },
+  "homepage": "https://github.com/jiaweizhang1995/nba-playoff-skill",
+  "repository": "https://github.com/jiaweizhang1995/nba-playoff-skill",
+  "license": "MIT",
+  "keywords": ["nba", "playoffs", "bracket", "espn", "sports"]
+}
