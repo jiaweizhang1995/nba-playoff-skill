@@ -1,12 +1,20 @@
 # nba-playoff-skill
 
-A [Claude Code](https://claude.com/claude-code) skill that renders the current NBA playoff bracket as an ASCII tree, with live in-progress scores, series records, and all dates in Beijing time (UTC+8). Data source: ESPN.
+**[English](#english)** · **[中文](#中文)**
+
+---
+
+<a name="english"></a>
+
+## English
+
+A [Claude Code](https://claude.com/claude-code) skill that draws the current NBA playoff bracket as an ASCII tree — live scores, series records, all dates in Beijing time (UTC+8).
+
+### Preview
 
 ```
 NBA PLAYOFFS 2025-26 -- 1st Round
-Updated 2026-04-19 02:09 CST  (source: ESPN)
-
-─────────────────────────────── WESTERN ────────────────────────────────
+─────────────────────────── WESTERN ────────────────────────────
 ╭────────────────────╮
 │1 Thunder           │
 │8 Suns              │─┐
@@ -16,83 +24,106 @@ Updated 2026-04-19 02:09 CST  (source: ESPN)
 ...
 ```
 
-## Requirements
+### Requirements
 
-- **Claude Code** installed ([download](https://claude.com/claude-code))
-- **Python 3.9+** on PATH
-- Python package `requests` (`pip install requests`)
-- **Node.js 16+** (only for npm install method)
+- Claude Code
+- Python 3.9+ with `requests` → `pip install requests`
+- Node.js 16+ (npm install method only)
 
-## Install
+### Install
 
-### Option A — Plugin marketplace (recommended)
+**Option A — npm (recommended):**
 
-Inside Claude Code, run:
+```bash
+npm install -g nba-playoff-skill
+```
+
+**Option B — Claude Code plugin marketplace:**
 
 ```
 /plugin marketplace add jiaweizhang1995/nba-playoff-skill
 /plugin install nba-playoff-skill@jimmyzhang-skills
 ```
 
-### Option B — npm (global)
+### Usage
 
-```bash
-npm install -g nba-playoff-skill
-```
-
-Postinstall copies the skill into `~/.claude/skills/nba-playoffs/`.
-
-### Option C — manual
-
-```bash
-git clone https://github.com/jiaweizhang1995/nba-playoff-skill.git
-cp -r nba-playoff-skill/skills/nba-playoffs ~/.claude/skills/
-```
-
-## Usage
-
-In any Claude Code session, ask any of:
+In any Claude Code session, say any of:
 
 - `show nba playoff bracket`
 - `nba playoffs`
 - `看一下季后赛`
-- `NBA 对阵图`
 
-Claude auto-invokes the skill and prints the bracket.
+Claude auto-runs the skill and prints the bracket.
 
-## Uninstall
-
-**npm:**
+### Uninstall
 
 ```bash
 npm uninstall -g nba-playoff-skill
 ```
 
-**Plugin:**
+### License
+
+MIT © [jimmyzhang95](https://github.com/jiaweizhang1995)
+
+---
+
+<a name="中文"></a>
+
+## 中文
+
+一个 [Claude Code](https://claude.com/claude-code) skill — 用 ASCII 树状图显示当前 NBA 季后赛对阵。实时比分、系列赛战况、所有日期都是北京时间 (UTC+8)。
+
+### 预览
 
 ```
-/plugin uninstall nba-playoff-skill
+NBA PLAYOFFS 2025-26 -- 1st Round
+─────────────────────────── WESTERN ────────────────────────────
+╭────────────────────╮
+│1 Thunder           │
+│8 Suns              │─┐
+│04-20 03:30 CST     │ │ ╭────────────────────╮
+╰────────────────────╯ │ │TBD                 │
+                       ├─│TBD                 │─┐
+...
 ```
 
-**Manual:** `rm -rf ~/.claude/skills/nba-playoffs`
+### 依赖
 
-## How it works
+- Claude Code
+- Python 3.9+，带 `requests` 包 → `pip install requests`
+- Node.js 16+（仅 npm 安装方式需要）
 
-The skill is a single `SKILL.md` + one Python script. On invocation, Claude runs:
+### 安装
+
+**方式 A — npm（推荐）：**
 
 ```bash
-python3 ~/.claude/skills/nba-playoffs/scripts/render_bracket.py
+npm install -g nba-playoff-skill
 ```
 
-The script scrapes `espn.com/nba/bracket` (embedded JSON blob) and fuses it with `site.api.espn.com`'s live scoreboard. Bracket schedule is disk-cached for 5 minutes; live scores are always fresh.
+**方式 B — Claude Code 插件市场：**
 
-## Notes
+```
+/plugin marketplace add jiaweizhang1995/nba-playoff-skill
+/plugin install nba-playoff-skill@jimmyzhang-skills
+```
 
-- All dates are rendered in `Asia/Shanghai` (UTC+8, CST).
-- Works for 1st Round → Conf. Semifinals → Conf. Finals → NBA Finals. Off-season shows empty TBD cells.
-- ASCII output is ~72 chars wide. Looks correct in monospace terminals. Breaks in WeChat / proportional fonts.
-- No logos, no odds, no TV networks — by design.
+### 使用
 
-## License
+在任意 Claude Code 会话里，说以下任意一句：
 
-MIT © jimmyzhang95
+- `看一下季后赛`
+- `NBA 对阵图`
+- `show nba playoff bracket`
+
+Claude 自动调用 skill，打印对阵图。
+
+### 卸载
+
+```bash
+npm uninstall -g nba-playoff-skill
+```
+
+### 许可证
+
+MIT © [jimmyzhang95](https://github.com/jiaweizhang1995)
