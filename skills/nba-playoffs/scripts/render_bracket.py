@@ -135,32 +135,71 @@ def compact_status(detail: str) -> str:
 
 
 def compute_series(series_scores: dict, live_events: dict):
+    """Return (wins_A, wins_B, live_status, live_score) for one series.
+
+    Wins come *directly* from the bracket JSON's per-game
+    ``statusState`` / ``winnerA`` / ``scoreA`` / ``scoreB`` fields. We do not
+    cross-reference today's live scoreboard for completed games because ESPN's
+    scoreboard drops games older than ~24h, which would silently zero-out any
+    series whose last game wasn't played today (e.g. Lakers 1-0 Rockets
+    rendering as 0-0 the day after Game 1).
+
+    The live scoreboard is still consulted, but *only* to enrich an in-progress
+    game with quarter/clock detail ("Q3 4:21") that the bracket JSON lacks.
+    """
     if not series_scores:
         return 0, 0, None, None
+
     live_by_id = {str(ev.get("id")): ev for ev in live_events.get("events", [])}
     w1 = w2 = 0
     live_status = None
     live_score = None
-    c1_name = series_scores["competitors"][0]["name"]
-    c2_name = series_scores["competitors"][1]["name"]
+
+    c1_name = series_scores["competitors"][0].get("name", "")
+    c2_name = series_scores["competitors"][1].get("name", "")
+
     for comp in series_scores.get("competitions", []):
-        ev = live_by_id.get(str(comp.get("id")))
-        if not ev:
-            continue
-        state = ev.get("status", {}).get("type", {}).get("state")
-        teams = ev.get("competitions", [{}])[0].get("competitors", [])
+        state = comp.get("statusState")
+        winner_a = comp.get("winnerA")
+        score_a = comp.get("scoreA")
+        score_b = comp.get("scoreB")
+
         if state == "post":
-            for t in teams:
-                if t.get("winner"):
-                    n = t.get("team", {}).get("name", "")
-                    if n == c1_name:
-                        w1 += 1
-                    elif n == c2_name:
-                        w2 += 1
+            # Primary signal: winnerA flag (True → A won, False → B won).
+            if winner_a is True:
+                w1 += 1
+            elif winner_a is False:
+                w2 += 1
+            # Fallback: ESPN sometimes leaves winnerA as None even after a
+            # final — fall back to the score comparison we already have.
+            elif score_a is not None and score_b is not None:
+                if score_a > score_b:
+                    w1 += 1
+                elif score_b > score_a:
+                    w2 += 1
+            # else: no reliable signal, skip
+
         elif state == "in":
-            live_status = compact_status(ev.get("status", {}).get("type", {}).get("shortDetail", ""))
-            by = {t.get("team", {}).get("name", ""): t.get("score") for t in teams}
-            live_score = f"{by.get(c1_name,'')}-{by.get(c2_name,'')}"
+            # In-progress game: bracket JSON carries live scoreA/scoreB too,
+            # so we can show a score even if scoreboard enrichment fails.
+            if score_a is not None and score_b is not None:
+                live_score = f"{score_a}-{score_b}"
+
+            ev = live_by_id.get(str(comp.get("id")))
+            if ev:
+                live_status = compact_status(
+                    ev.get("status", {}).get("type", {}).get("shortDetail", "")
+                )
+                # Scoreboard score is more up-to-the-minute than bracket JSON;
+                # overwrite if both teams are present.
+                teams = ev.get("competitions", [{}])[0].get("competitors", [])
+                by = {t.get("team", {}).get("name", ""): t.get("score") for t in teams}
+                if by.get(c1_name) is not None and by.get(c2_name) is not None:
+                    live_score = f"{by.get(c1_name)}-{by.get(c2_name)}"
+            elif comp.get("statusDetail"):
+                # No live scoreboard match — fall back to bracket's own label.
+                live_status = compact_status(comp.get("statusDetail", ""))
+
     return w1, w2, live_status, live_score
 
 
