@@ -135,7 +135,7 @@ def compact_status(detail: str) -> str:
 
 
 def compute_series(series_scores: dict, live_events: dict):
-    """Return (wins_A, wins_B, live_status, live_score) for one series.
+    """Return (wins_A, wins_B, live_status, live_score_1, live_score_2).
 
     Wins come *directly* from the bracket JSON's per-game
     ``statusState`` / ``winnerA`` / ``scoreA`` / ``scoreB`` fields. We do not
@@ -145,15 +145,21 @@ def compute_series(series_scores: dict, live_events: dict):
     rendering as 0-0 the day after Game 1).
 
     The live scoreboard is still consulted, but *only* to enrich an in-progress
-    game with quarter/clock detail ("Q3 4:21") that the bracket JSON lacks.
+    game with quarter/clock detail ("Q3 4:21") that the bracket JSON lacks,
+    and to get the freshest per-team score.
+
+    ``live_score_1`` / ``live_score_2`` are per-team current scores (as strings)
+    for the in-progress game, so the renderer can show them next to each team
+    name — this makes the leader visually obvious in the terminal output.
     """
     if not series_scores:
-        return 0, 0, None, None
+        return 0, 0, None, None, None
 
     live_by_id = {str(ev.get("id")): ev for ev in live_events.get("events", [])}
     w1 = w2 = 0
     live_status = None
-    live_score = None
+    live_score_1 = None
+    live_score_2 = None
 
     c1_name = series_scores["competitors"][0].get("name", "")
     c2_name = series_scores["competitors"][1].get("name", "")
@@ -182,8 +188,10 @@ def compute_series(series_scores: dict, live_events: dict):
         elif state == "in":
             # In-progress game: bracket JSON carries live scoreA/scoreB too,
             # so we can show a score even if scoreboard enrichment fails.
-            if score_a is not None and score_b is not None:
-                live_score = f"{score_a}-{score_b}"
+            if score_a is not None:
+                live_score_1 = str(score_a)
+            if score_b is not None:
+                live_score_2 = str(score_b)
 
             ev = live_by_id.get(str(comp.get("id")))
             if ev:
@@ -191,16 +199,18 @@ def compute_series(series_scores: dict, live_events: dict):
                     ev.get("status", {}).get("type", {}).get("shortDetail", "")
                 )
                 # Scoreboard score is more up-to-the-minute than bracket JSON;
-                # overwrite if both teams are present.
+                # overwrite per-team when available.
                 teams = ev.get("competitions", [{}])[0].get("competitors", [])
                 by = {t.get("team", {}).get("name", ""): t.get("score") for t in teams}
-                if by.get(c1_name) is not None and by.get(c2_name) is not None:
-                    live_score = f"{by.get(c1_name)}-{by.get(c2_name)}"
+                if by.get(c1_name) is not None:
+                    live_score_1 = str(by.get(c1_name))
+                if by.get(c2_name) is not None:
+                    live_score_2 = str(by.get(c2_name))
             elif comp.get("statusDetail"):
                 # No live scoreboard match — fall back to bracket's own label.
                 live_status = compact_status(comp.get("statusDetail", ""))
 
-    return w1, w2, live_status, live_score
+    return w1, w2, live_status, live_score_1, live_score_2
 
 
 def matchup_box(m: dict, live: dict) -> list[str]:
@@ -213,23 +223,38 @@ def matchup_box(m: dict, live: dict) -> list[str]:
         return f"{seed} {name}" if seed else name
 
     series = m.get("seriesScores") or {}
-    w1, w2, live_status, live_score = compute_series(series, live)
+    w1, w2, live_status, live_score_1, live_score_2 = compute_series(series, live)
     inner = BOX_W - 2
+    is_live = live_status is not None and (
+        live_score_1 is not None or live_score_2 is not None
+    )
 
-    def line(c, w):
+    def line(c, wins, live_score):
+        """Render one team row. Right-aligned suffix is:
+        - live score during in-progress games (so leader is visually obvious)
+        - series wins if series has any wins recorded
+        - empty otherwise
+        """
         tag = label(c)
-        if m.get("isSeries") and (w1 + w2 > 0):
-            num = f" {w}"
-            tag = (tag[: inner - len(num)].ljust(inner - len(num))) + num
+        if is_live and live_score is not None:
+            num = f" {live_score}"
+        elif m.get("isSeries") and (w1 + w2 > 0):
+            num = f" {wins}"
         else:
-            tag = tag[:inner].ljust(inner)
-        return tag
+            return tag[:inner].ljust(inner)
+        return (tag[: inner - len(num)].ljust(inner - len(num))) + num
 
-    l1 = line(c1, w1)
-    l2 = line(c2, w2)
+    l1 = line(c1, w1, live_score_1)
+    l2 = line(c2, w2, live_score_2)
 
-    if live_status and live_score:
-        status = f"* {live_score} {live_status}"
+    if is_live:
+        # Team rows already show per-team scores. Status line keeps just the
+        # quarter/clock, plus a pre-game series record if this isn't game 1.
+        prefix = ""
+        if w1 > 0 or w2 > 0:
+            leader_abbr = (c1 if w1 >= w2 else c2).get("abbreviation", "???")
+            prefix = f"{leader_abbr} {max(w1, w2)}-{min(w1, w2)} "
+        status = f"* {prefix}{live_status}"
     elif m.get("isSeriesComplete"):
         winner = c1 if c1.get("seriesWinner") else c2 if c2.get("seriesWinner") else None
         abbr = (winner or {}).get("abbreviation", "???")
